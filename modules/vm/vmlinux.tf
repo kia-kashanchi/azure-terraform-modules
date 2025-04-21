@@ -1,4 +1,4 @@
-resource "azurerm_network_interface" "this" {
+resource "azurerm_network_interface" "nic" {
   name                = "${var.vm_name}-nic"
   location            = var.location
   resource_group_name = var.resource_group_name
@@ -7,17 +7,17 @@ resource "azurerm_network_interface" "this" {
     name                          = "internal"
     subnet_id                     = var.subnet_id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = var.public_ip_id != null ? var.public_ip_id : null
+    public_ip_address_id          = var.public_ip_id
   }
 }
 
-resource "azurerm_linux_virtual_machine" "this" {
+resource "azurerm_linux_virtual_machine" "linuxvm" {
   name                  = var.vm_name
   resource_group_name   = var.resource_group_name
   location              = var.location
   size                  = var.vm_size
   admin_username        = var.admin_username
-  network_interface_ids = [azurerm_network_interface.this.id]
+  network_interface_ids = [azurerm_network_interface.nic.id]
 
   admin_ssh_key {
     username   = var.admin_username
@@ -25,7 +25,7 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 
   os_disk {
-    caching              = "ReadWrite"
+    caching              = var.os_disk_caching
     storage_account_type = var.disk_type
   }
 
@@ -37,4 +37,8 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 
   tags = var.tags
+
+  depends_on = [
+    azurerm_network_interface.nic
+  ]
 }
